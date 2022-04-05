@@ -1,0 +1,16 @@
+*{
+    font-family: 'Lucida Sans', Verdana, sans-serif;
+    font-size: 22px;
+}
+
+header{
+    display: flex;
+    justify-content: space-between;
+    padding: 1%;
+}
+
+.main-container{
+    justify-content: center;
+    padding: 5% 20%;
+}
+
