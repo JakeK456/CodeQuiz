@@ -10,6 +10,7 @@ const WRONG_ANSWER_DEDUCTION = 20;
 
 startButton.addEventListener("click", function () {
     resetValues();
+    //endQuiz();
     startTimer();
     renderQuizQuestion(quizQuestions[quizQuestionIndex]);
 });
@@ -96,11 +97,24 @@ function renderHighscores(){
     var headerPromptElement = document.createElement("h1");
     headerPromptElement.textContent = "Highscores";
     mainContainer.appendChild(headerPromptElement);
+
+    var highScoresOrderedListElement = document.createElement("ol");
+    var scores = highScores.getScores();
+    console.log(scores);
+
+    for (var i = 0; i < scores.length; i++){
+        var highScoreListElement = document.createElement("li");
+        highScoreListElement.textContent = scores[i][1] + "   " + scores[i][0]
+        highScoresOrderedListElement.appendChild(highScoreListElement);
+    }
+
+    mainContainer.appendChild(highScoresOrderedListElement);
+
 }
 
 mainContainer.addEventListener("click", function(event){
     var target = event.target;
-
+ 
     if (target.dataset.isCorrect === "true"){
         console.log("correct!");
         quizQuestionIndex++;
@@ -112,14 +126,46 @@ mainContainer.addEventListener("click", function(event){
         quizQuestionIndex++;
         renderQuizQuestion(quizQuestions[quizQuestionIndex]);
     }
-
     if (target.dataset.isInitialsSubmit === "true"){
+        var initials = target.previousElementSibling.value;
+        highScores.addScore(secondsLeft, initials);
         renderHighscores();
     }
-
 });
 
+var highScores = {
+    scores: [],
 
+    getScores(){
+        var retval = JSON.parse(localStorage.getItem("highScores"));
+        if (retval === null){
+            this.scores = [];
+        }
+        else{
+            this.scores = retval;
+        }
+        return this.scores;
+    },
+
+    addScore(score, name){
+        this.getScores();
+        this.scores.push([score, name]);
+        this.scores.sort(this.sortFunction);
+        localStorage.setItem("highScores", JSON.stringify(this.scores));
+    },
+    clearScores(){
+        this.scores = [];
+        localStorage.setItem("highScores", [JSON.stringify(this.scores)]);
+    },
+    sortFunction(a, b) {
+        if (a[0] === b[0]) {
+            return 0;
+        }
+        else {
+            return (a[0] > b[0]) ? -1 : 1;
+        }
+      }
+}
 
 function QuizQuestion(question, answers){
     this.question = question;
