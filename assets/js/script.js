@@ -7,7 +7,7 @@ var belowMainContainerEl = document.querySelector(".below-main-container");
 
 var secondsLeft = 75;
 var quizQuestionIndex = 0;
-var gameOver = false;
+var timerInterval;
 var footerTimer;
 
 const WRONG_ANSWER_DEDUCTION = 20;
@@ -75,7 +75,7 @@ function renderStartPage(){
     headerElement.className += "padding-v15 font-xxl";
     
     var gameDirectionsElement = document.createElement("p");
-    gameDirectionsElement.textContent = "Try to answer the following code-related questions within the time limit. Keep in mind that incorrect answers will penalize your score/time by ten seconds!";
+    gameDirectionsElement.textContent = "Try to answer the following code-related questions within the time limit. Keep in mind that incorrect answers will penalize your score/time by twenty seconds!";
     gameDirectionsElement.className += "padding-v15";
 
     var startButton = document.createElement("button");
@@ -92,7 +92,6 @@ function renderQuizQuestion(quizQuestion){
     mainContainer.innerHTML = "";
 
     if (quizQuestionIndex >= quizQuestions.length){
-        gameOver = true;
         endQuiz();
         return;
     }
@@ -126,6 +125,8 @@ function renderQuizQuestion(quizQuestion){
 // renders the screen after quiz questions are completed. Prompts user for highscore input
 function endQuiz(){
     mainContainer.innerHTML = "";
+
+    clearInterval(timerInterval);
 
     var headerPromptElement = document.createElement("h1");
     headerPromptElement.textContent = "All Done!";
@@ -207,12 +208,11 @@ function renderFooterMessage(message){
 
 // starts timer in top right corner
 function startTimer(){
-    var timerInterval = setInterval(function() {
+    timerInterval = setInterval(function() {
         secondsLeft--;
         timerEl.textContent = secondsLeft;
     
-        if(secondsLeft <= 0 || gameOver) {
-          clearInterval(timerInterval);
+        if(secondsLeft <= 0) {
           endQuiz();
         }
       }, 1000);
@@ -222,7 +222,6 @@ function startTimer(){
 function resetValues(){
     secondsLeft = 75;
     quizQuestionIndex = 0;
-    gameOver = false;
 }
 
 var highScores = {
