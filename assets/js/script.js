@@ -1,26 +1,211 @@
+// element links to static html
 var mainContainer = document.querySelector(".main-container");
 var startButton = document.querySelector(".start-button");
 var timerEl = document.querySelector(".timer");
+var highScoresLinkEl = document.querySelector(".highscores");
+var belowMainContainerEl = document.querySelector(".below-main-container");
 
 var secondsLeft = 75;
 var quizQuestionIndex = 0;
 var gameOver = false;
+var footerTimer;
 
 const WRONG_ANSWER_DEDUCTION = 20;
 
-startButton.addEventListener("click", function () {
-    resetValues();
-    //endQuiz();
-    startTimer();
-    renderQuizQuestion(quizQuestions[quizQuestionIndex]);
+// render start page once app starts
+renderStartPage();
+
+// renders highscores if button in top left is clicked
+highScoresLinkEl.addEventListener("click", function(){
+    renderHighscores();
 });
 
-function resetValues(){
-    secondsLeft = 75;
-    quizQuestionIndex = 0;
-    gameOver = false;
+// event delegation over main container. Targets button text and data attibutes of elements
+mainContainer.addEventListener("click", function(event){
+    var target = event.target;
+
+    // targets start button
+    if (target.textContent === "Start Quiz"){
+        startTimer();
+        renderQuizQuestion(quizQuestions[quizQuestionIndex]);
+    }
+
+    // targets if answer is correct
+    if (target.dataset.isCorrect === "true"){
+        quizQuestionIndex++;
+        renderFooterMessage("Correct!");
+        renderQuizQuestion(quizQuestions[quizQuestionIndex]);
+    }
+
+    // targets if answer is incorrect
+    if (target.dataset.isCorrect === "false"){
+        secondsLeft = secondsLeft - WRONG_ANSWER_DEDUCTION;
+        quizQuestionIndex++;
+        renderFooterMessage("Incorrect!");
+        renderQuizQuestion(quizQuestions[quizQuestionIndex]);
+    }
+
+    // targets initials submit button
+    if (target.textContent === "Submit"){
+        var initials = target.previousElementSibling.value;
+        highScores.addScore(secondsLeft, initials);
+        renderHighscores();
+    }
+
+    // targets high scores play again button
+    if (target.textContent === "Play Again"){
+        resetValues();
+        renderStartPage();
+    }
+
+    //targets high scores clear button
+    if (target.textContent === "Clear Highscores"){
+        highScores.clearScores();
+        renderHighscores();
+    }
+});
+
+// blanks out main container and renders starting info and buttons
+function renderStartPage(){
+    mainContainer.innerHTML = "";
+    timerEl.textContent = secondsLeft;
+
+    var headerElement = document.createElement("h1");
+    headerElement.textContent = "Coding Quiz Challenge";
+    headerElement.className += "padding-v15 font-xxl";
+    
+    var gameDirectionsElement = document.createElement("p");
+    gameDirectionsElement.textContent = "Try to answer the following code-related questions within the time limit. Keep in mind that incorrect answers will penalize your score/time by ten seconds!";
+    gameDirectionsElement.className += "padding-v15";
+
+    var startButton = document.createElement("button");
+    startButton.textContent = "Start Quiz";
+    startButton.className += "quiz-button";
+
+    mainContainer.appendChild(headerElement);
+    mainContainer.appendChild(gameDirectionsElement);
+    mainContainer.appendChild(startButton);
 }
 
+// blanks out main container and renders quiz question 
+function renderQuizQuestion(quizQuestion){
+    mainContainer.innerHTML = "";
+
+    if (quizQuestionIndex >= quizQuestions.length){
+        gameOver = true;
+        endQuiz();
+        return;
+    }
+
+    // change header to question prompt
+    var questionPromptElement = document.createElement("h1");
+    questionPromptElement.textContent = quizQuestion.question;
+    questionPromptElement.className += "padding-v15 font-xxl";
+    mainContainer.appendChild(questionPromptElement);
+
+    var answersOrderedListElement = document.createElement("ol");
+
+    // make a list of answer buttons
+    for (var i = 0; i < quizQuestion.answers.length; i++){
+        
+        var answer = quizQuestion.answers[i].text;
+        var answerListElement = document.createElement("li");
+        var answerButtonElement = document.createElement("button");
+
+        answerButtonElement.textContent = (i+1) + ".  " + answer;
+        answerButtonElement.dataset.isCorrect = quizQuestion.answers[i].isCorrect;
+        answerButtonElement.className += "quiz-button";
+
+        answerListElement.appendChild(answerButtonElement);
+        answersOrderedListElement.appendChild(answerListElement);
+    }
+
+    mainContainer.appendChild(answersOrderedListElement);
+} 
+
+// renders the screen after quiz questions are completed. Prompts user for highscore input
+function endQuiz(){
+    mainContainer.innerHTML = "";
+
+    var headerPromptElement = document.createElement("h1");
+    headerPromptElement.textContent = "All Done!";
+    headerPromptElement.className += "padding-v15 font-xxl";
+    mainContainer.appendChild(headerPromptElement);
+
+    var scoreDisplayElement = document.createElement("p");
+    scoreDisplayElement.textContent = "Your score is: " + secondsLeft + ".";
+    scoreDisplayElement.className += "padding-v15";
+    mainContainer.appendChild(scoreDisplayElement);
+
+    var intialsPrompt = document.createElement("span");
+    intialsPrompt.textContent = "Enter initials:";
+    mainContainer.appendChild(intialsPrompt);
+
+    var initialsInput = document.createElement("input");
+    initialsInput.className += "margin-5 padding-5"
+    mainContainer.appendChild(initialsInput);
+
+    var submitButton = document.createElement("button");
+    submitButton.textContent = "Submit";
+    submitButton.className += "quiz-button";
+    mainContainer.appendChild(submitButton);
+
+}
+
+// renders the highscores page
+function renderHighscores(){
+    mainContainer.innerHTML = "";
+    
+    var headerPromptElement = document.createElement("h1");
+    headerPromptElement.textContent = "Highscores";
+    headerPromptElement.className += "padding-v15 font-xxl";
+    mainContainer.appendChild(headerPromptElement);
+
+    var highScoresOrderedListElement = document.createElement("ol");
+    highScoresOrderedListElement.className += "padding-v30";
+    var scores = highScores.getScores();
+    console.log(scores);
+
+    for (var i = 0; i < scores.length; i++){
+        var highScoreListElement = document.createElement("li");
+        highScoreListElement.textContent = scores[i][1] + "   " + scores[i][0]
+        highScoreListElement.className += "highscore-list";
+        highScoresOrderedListElement.appendChild(highScoreListElement);
+    }
+
+    var highScoresButtonDiv = document.createElement("div");
+    var playAgainButton = document.createElement("button");
+    playAgainButton.textContent = "Play Again";
+
+    var clearHighscoresButton = document.createElement("button");
+    clearHighscoresButton.textContent = "Clear Highscores";
+
+    playAgainButton.className += "quiz-button";
+    clearHighscoresButton.className += "quiz-button";
+
+    highScoresButtonDiv.appendChild(playAgainButton);
+    highScoresButtonDiv.appendChild(clearHighscoresButton);
+
+    mainContainer.appendChild(highScoresOrderedListElement);
+    mainContainer.appendChild(highScoresButtonDiv);
+}
+
+// renders footer message below main container when user selects an answer
+function renderFooterMessage(message){
+    belowMainContainerEl.innerHTML = "";
+
+    var hrEl = document.createElement("hr");
+    var footerMessageEl = document.createElement("p");
+    footerMessageEl.textContent = message;
+
+    belowMainContainerEl.appendChild(hrEl);
+    belowMainContainerEl.appendChild(footerMessageEl);
+
+    clearTimeout(footerTimer);
+    footerTimer = setTimeout(function(){belowMainContainerEl.innerHTML = "";}, 1000);
+}
+
+// starts timer in top right corner
 function startTimer(){
     var timerInterval = setInterval(function() {
         secondsLeft--;
@@ -33,105 +218,12 @@ function startTimer(){
       }, 1000);
 }
 
-function endQuiz(){
-    mainContainer.innerHTML = "";
-
-    // change header to question prompt
-    var headerPromptElement = document.createElement("h1");
-    headerPromptElement.textContent = "All Done!";
-    mainContainer.appendChild(headerPromptElement);
-
-    var headerPromptElement = document.createElement("p");
-    headerPromptElement.textContent = "Your score is: " + secondsLeft + ".";
-    mainContainer.appendChild(headerPromptElement);
-
-    var intialsPrompt = document.createElement("span");
-    intialsPrompt.textContent = "Enter initials:";
-    mainContainer.appendChild(intialsPrompt);
-
-    var initialsInput = document.createElement("input");
-    mainContainer.appendChild(initialsInput);
-
-    var submitButton = document.createElement("button");
-    submitButton.textContent = "Submit";
-    submitButton.dataset.isInitialsSubmit = true;
-    mainContainer.appendChild(submitButton);
-
+// resets game data when starting over
+function resetValues(){
+    secondsLeft = 75;
+    quizQuestionIndex = 0;
+    gameOver = false;
 }
-
-function renderQuizQuestion(quizQuestion){
-    mainContainer.innerHTML = "";
-
-    if (quizQuestionIndex >= quizQuestions.length){
-        gameOver = true;
-        return;
-    }
-
-    // change header to question prompt
-    var questionPromptElement = document.createElement("h1");
-    questionPromptElement.textContent = quizQuestion.question;
-    mainContainer.appendChild(questionPromptElement);
-
-    var answersOrderedListElement = document.createElement("ol");
-
-    // make a list of answers
-    for (var i = 0; i < quizQuestion.answers.length; i++){
-        
-        var answer = quizQuestion.answers[i].text;
-        var answerListElement = document.createElement("li");
-        var answerButtonElement = document.createElement("button");
-
-        answerButtonElement.textContent = answer;
-        answerButtonElement.dataset.isCorrect = quizQuestion.answers[i].isCorrect;
-
-        answerListElement.appendChild(answerButtonElement);
-        answersOrderedListElement.appendChild(answerListElement);
-    }
-
-    mainContainer.appendChild(answersOrderedListElement);
-} 
-
-function renderHighscores(){
-    mainContainer.innerHTML = "";
-    
-    var headerPromptElement = document.createElement("h1");
-    headerPromptElement.textContent = "Highscores";
-    mainContainer.appendChild(headerPromptElement);
-
-    var highScoresOrderedListElement = document.createElement("ol");
-    var scores = highScores.getScores();
-    console.log(scores);
-
-    for (var i = 0; i < scores.length; i++){
-        var highScoreListElement = document.createElement("li");
-        highScoreListElement.textContent = scores[i][1] + "   " + scores[i][0]
-        highScoresOrderedListElement.appendChild(highScoreListElement);
-    }
-
-    mainContainer.appendChild(highScoresOrderedListElement);
-
-}
-
-mainContainer.addEventListener("click", function(event){
-    var target = event.target;
- 
-    if (target.dataset.isCorrect === "true"){
-        console.log("correct!");
-        quizQuestionIndex++;
-        renderQuizQuestion(quizQuestions[quizQuestionIndex]);
-    }
-    if (target.dataset.isCorrect === "false"){
-        console.log("Incorrect!");
-        secondsLeft = secondsLeft - WRONG_ANSWER_DEDUCTION;
-        quizQuestionIndex++;
-        renderQuizQuestion(quizQuestions[quizQuestionIndex]);
-    }
-    if (target.dataset.isInitialsSubmit === "true"){
-        var initials = target.previousElementSibling.value;
-        highScores.addScore(secondsLeft, initials);
-        renderHighscores();
-    }
-});
 
 var highScores = {
     scores: [],
