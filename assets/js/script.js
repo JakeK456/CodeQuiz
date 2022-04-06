@@ -125,7 +125,7 @@ function renderQuizQuestion(quizQuestion){
 // renders the screen after quiz questions are completed. Prompts user for highscore input
 function endQuiz(){
     mainContainer.innerHTML = "";
-
+    timerEl.textContent = secondsLeft;
     clearInterval(timerInterval);
 
     var headerPromptElement = document.createElement("h1");
